@@ -1,0 +1,12 @@
+{
+  "name": "labpulse-api",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-11-16",
+  "containers": [
+    { "class_name": "Backend", "image": "../backend/Dockerfile", "max_instances": 2 }
+  ],
+  "durable_objects": {
+    "bindings": [{ "name": "BACKEND", "class_name": "Backend" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Backend"] }]
+}

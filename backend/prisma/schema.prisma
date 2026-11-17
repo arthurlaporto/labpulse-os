@@ -1,0 +1,211 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ===================== ENUMS =====================
+// Um enum é uma lista fechada de valores permitidos.
+
+enum TipoUsuario {
+  EXTERNO
+  INTERNO_UFF
+  RESPONSAVEL_EQUIPAMENTO
+  COORDENADOR_LABORATORIO
+  ADMINISTRADOR
+}
+
+enum StatusOperacional {
+  DISPONIVEL
+  EM_USO
+  COM_RESTRICOES
+  INOPERANTE
+  SUBSTITUIDO
+}
+
+enum FinalidadeUso {
+  PESQUISA
+  ENSINO
+  EXTENSAO
+  SERVICO_EXTERNO
+}
+
+enum StatusRegistroUso {
+  SOLICITADO
+  APROVADO
+  EM_ANDAMENTO
+  CONCLUIDO
+  RECUSADO
+}
+
+enum StatusAprovacao {
+  PENDENTE
+  APROVADA
+  RECUSADA
+}
+
+enum TipoManutencao {
+  CORRETIVA
+  PREVENTIVA
+  PREDITIVA
+}
+
+enum StatusManutencao {
+  ABERTA
+  ENCERRADA
+  CANCELADA
+}
+
+// ===================== ESTRUTURA FÍSICA =====================
+
+model Universidade {
+  id    Int      @id @default(autoincrement())
+  nome  String
+  sigla String
+  ehUff Boolean  @default(false)
+  campi Campus[] // lado "muitos": uma universidade tem vários campi
+}
+
+model Campus {
+  id             Int           @id @default(autoincrement())
+  nome           String
+  localizacao    String?
+  universidadeId Int
+  universidade   Universidade  @relation(fields: [universidadeId], references: [id])
+  laboratorios   Laboratorio[]
+}
+
+model Laboratorio {
+  id            Int      @id @default(autoincrement())
+  nome          String
+  localizacao   String // sala ou bloco, ex.: "A32"
+  campusId      Int
+  campus        Campus   @relation(fields: [campusId], references: [id])
+  coordenadorId Int? // opcional: pode ser definido depois
+  coordenador   Usuario? @relation(fields: [coordenadorId], references: [id])
+
+  equipamentos  Equipamento[]
+  recomendacoes RecomendacaoEquipamento[]
+}
+
+// ===================== PESSOAS =====================
+
+model Usuario {
+  id                   Int         @id @default(autoincrement())
+  nome                 String
+  email                String      @unique
+  matriculaCpf         String
+  tipoUsuario          TipoUsuario
+  vinculoInstitucional String
+  ehUff                Boolean
+  senhaHash            String?
+
+  // Lados "muitos" das relações que apontam para o usuário
+  laboratoriosCoordenados Laboratorio[]
+  equipamentosResponsavel Equipamento[]
+  projetosCoordenados     ProjetoPesquisa[]
+  registrosUso            RegistroUso[]
+  recomendacoes           RecomendacaoEquipamento[]
+  manutencoes             Manutencao[]
+}
+
+// ===================== ATIVOS =====================
+
+model Equipamento {
+  id                     Int               @id @default(autoincrement())
+  nome                   String
+  descricao              String?
+  fabricante             String?
+  modelo                 String?
+  numeroSerie            String?
+  dataAquisicao          DateTime?
+  fotoUrl                String // obrigatória no cadastro (RF02)
+  statusOperacionalidade StatusOperacional @default(DISPONIVEL)
+  percentualDesempenho   Float             @default(100)
+  vidaUtilEstimadaHoras  Int?
+  horasUsoAcumuladas     Int               @default(0)
+
+  laboratorioId Int
+  laboratorio   Laboratorio @relation(fields: [laboratorioId], references: [id])
+  responsavelId Int
+  responsavel   Usuario     @relation(fields: [responsavelId], references: [id])
+
+  registrosUso RegistroUso[]
+  manutencoes  Manutencao[]
+}
+
+// ===================== USO E PESQUISA =====================
+
+model ProjetoPesquisa {
+  id                     Int     @id @default(autoincrement())
+  titulo                 String
+  codigoProjeto          String  @unique // ex.: código do fomento
+  professorResponsavelId Int
+  professorResponsavel   Usuario @relation(fields: [professorResponsavelId], references: [id])
+
+  registrosUso RegistroUso[]
+}
+
+model RegistroUso {
+  id                   Int               @id @default(autoincrement())
+  numeroRegistro       String            @unique // ex.: RU-001
+  dataSolicitacao      DateTime          @default(now())
+  dataInicio           DateTime
+  dataFim              DateTime?
+  finalidadeUso        FinalidadeUso
+  status               StatusRegistroUso @default(SOLICITADO)
+  amostraDescricao     String?
+  oQueFoiMedido        String?
+  arquivosResultadoUrl String?
+  intercorrencias      String?
+
+  usuarioId     Int
+  usuario       Usuario          @relation(fields: [usuarioId], references: [id])
+  equipamentoId Int
+  equipamento   Equipamento      @relation(fields: [equipamentoId], references: [id])
+  projetoId     Int? // uso externo pode não ter projeto
+  projeto       ProjetoPesquisa? @relation(fields: [projetoId], references: [id])
+}
+
+// ===================== MANUTENÇÃO E RECOMENDAÇÕES =====================
+
+model Manutencao {
+  id               Int              @id @default(autoincrement())
+  numeroOs         String           @unique // ex.: OS-001
+  tipo             TipoManutencao
+  status           StatusManutencao @default(ABERTA)
+  dataSolicitacao  DateTime         @default(now())
+  dataEncerramento DateTime?
+  descricao        String
+  notaAvaliacao    Int? // 1 a 5, preenchida ao encerrar
+  observacoes      String?
+
+  equipamentoId Int
+  equipamento   Equipamento @relation(fields: [equipamentoId], references: [id])
+  solicitanteId Int
+  solicitante   Usuario     @relation(fields: [solicitanteId], references: [id])
+}
+
+model RecomendacaoEquipamento {
+  id                     Int             @id @default(autoincrement())
+  nomeEquipamento        String
+  especificacoesTecnicas String?
+  justificativa          String
+  fotoReferenciaUrl      String?
+  statusAprovacao        StatusAprovacao @default(PENDENTE)
+  dataSolicitacao        DateTime        @default(now())
+
+  solicitanteId Int
+  solicitante   Usuario     @relation(fields: [solicitanteId], references: [id])
+  laboratorioId Int // laboratório cujo coordenador recebe o pedido
+  laboratorio   Laboratorio @relation(fields: [laboratorioId], references: [id])
+}

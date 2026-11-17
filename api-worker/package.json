@@ -1,0 +1,16 @@
+{
+  "name": "labpulse-api",
+  "private": true,
+  "scripts": {
+    "deploy": "wrangler deploy"
+  },
+  "dependencies": {
+    "@cloudflare/containers": "^0.3.7"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20261116.1",
+    "@types/node": "^26.6.6",
+    "typescript": "^5.6.3",
+    "wrangler": "latest"
+  }
+}
