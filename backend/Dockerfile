@@ -7,8 +7,8 @@ COPY package*.json .npmrc ./
 RUN npm ci
 
 COPY . .
-# O prisma generate precisa de uma URL só para ler a configuração; ela não é usada no build.
-RUN DATABASE_URL="postgresql://x:x@localhost:5432/x" npm run build
+
+RUN DATABASE_URL="postgresql://x:x@localhost:5432/x" npx prisma generate && npm run build
 
 ENV NODE_ENV=production
 ENV PORT=8080
