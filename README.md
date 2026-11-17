@@ -144,14 +144,15 @@ The production environment runs continuous deployment triggered automatically on
 
 ## 📸 Preview
 
-> *Add screenshots of the login screen and main dashboard by saving images to `.github/assets/` and referencing them below:*
->
-> ```markdown
-> ![Login Screen](.github/assets/login.png)
-> ![Main Dashboard](.github/assets/dashboard.png)
-> ```
+### Dashboard (Light & Dark Mode)
 
----
+| Light Mode | Dark Mode |
+| :---: | :---: |
+| ![Dashboard Light](.github/assets/dashboard-light.png) | ![Dashboard Dark](.github/assets/dashboard-dark.png) |
+
+### Authentication
+
+![Login Screen](.github/assets/login.png)
 
 ## 📄 License
 
