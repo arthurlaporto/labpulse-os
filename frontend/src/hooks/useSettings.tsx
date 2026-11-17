@@ -1,11 +1,8 @@
-import { createContext, useContext, useEffect, type ReactNode } from "react";
-import { useLocalStorage } from "./useLocalStorage";
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { useAuth } from "../auth";
 
 export interface Settings {
   escuro: boolean;
-  nome: string;
-  email: string;
-  papel: string;
   campusPadrao: string;
   desempenhoMinimo: number; // % abaixo do qual o equipamento gera alerta
   vidaUtilAlerta: number;   // % da vida útil consumida que gera alerta
@@ -17,9 +14,6 @@ export interface Settings {
 
 export const defaultSettings: Settings = {
   escuro: false,
-  nome: "Usuário",
-  email: "",
-  papel: "Administrador",
   campusPadrao: "Vila Santa Cecília",
   desempenhoMinimo: 70,
   vidaUtilAlerta: 80,
@@ -32,12 +26,34 @@ export const defaultSettings: Settings = {
 interface Ctx { settings: Settings; update: (patch: Partial<Settings>) => void }
 const SettingsCtx = createContext<Ctx | null>(null);
 
-export function SettingsProvider({ children }: { children: ReactNode }) {
-  const [stored, setStored] = useLocalStorage<Settings>("labpulse:settings", defaultSettings);
-  const settings = { ...defaultSettings, ...stored };
-  const update: Ctx["update"] = (patch) => setStored((s) => ({ ...defaultSettings, ...s, ...patch }));
+function ler(key: string): Settings {
+  try {
+    const raw = localStorage.getItem(key);
+    return { ...defaultSettings, ...(raw ? JSON.parse(raw) : {}) };
+  } catch {
+    return defaultSettings;
+  }
+}
 
-  useEffect(() => { document.documentElement.classList.toggle("dark", settings.escuro); }, [settings.escuro]);
+export function SettingsProvider({ children }: { children: ReactNode }) {
+  const { user } = useAuth();
+  // Cada usuário tem a sua própria chave; antes do login vale a chave "visitante".
+  const key = `labpulse:settings:${user?.id ?? "visitante"}`;
+  const [settings, setSettings] = useState<Settings>(() => ler(key));
+
+  // Ao trocar de usuário, carrega as preferências dele.
+  useEffect(() => { setSettings(ler(key)); }, [key]);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle("dark", settings.escuro);
+  }, [settings.escuro]);
+
+  const update: Ctx["update"] = (patch) =>
+    setSettings((prev) => {
+      const next = { ...prev, ...patch };
+      try { localStorage.setItem(key, JSON.stringify(next)); } catch { /* ignora */ }
+      return next;
+    });
 
   return <SettingsCtx.Provider value={{ settings, update }}>{children}</SettingsCtx.Provider>;
 }

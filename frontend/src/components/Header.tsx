@@ -1,7 +1,21 @@
 import { useEffect, useRef, useState, type RefObject } from "react";
 import { useNavigate } from "react-router-dom";
-import { Bell, CheckCheck, ClipboardList, Hand, LogOut, Moon, Search, Sun, TriangleAlert, type LucideIcon } from "lucide-react";
+import {
+  Bell,
+  CheckCheck,
+  ChevronDown,
+  ClipboardList,
+  Hand,
+  LogOut,
+  Moon,
+  Search,
+  SlidersHorizontal,
+  Sun,
+  TriangleAlert,
+  type LucideIcon,
+} from "lucide-react";
 import { useAuth } from "../auth";
+import { gerencia } from "../cargos";
 import { useData } from "../data";
 import { entities } from "../entities";
 import { useLocalStorage } from "../hooks/useLocalStorage";
@@ -12,6 +26,8 @@ const iconBtn =
   "relative grid size-8 place-items-center rounded-md text-neutral-500 hover:bg-neutral-100 focus-visible:outline-2 focus-visible:outline-brand dark:hover:bg-neutral-800";
 const painel =
   "absolute z-40 mt-2 overflow-y-auto rounded-lg border border-neutral-100 bg-white shadow-lg dark:border-neutral-800 dark:bg-neutral-900";
+const itemMenu =
+  "flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-[13px] font-semibold hover:bg-neutral-50 focus-visible:outline-2 focus-visible:outline-brand dark:hover:bg-neutral-800";
 
 function useFora(ref: RefObject<HTMLElement | null>, fechar: () => void) {
   useEffect(() => {
@@ -23,14 +39,20 @@ function useFora(ref: RefObject<HTMLElement | null>, fechar: () => void) {
   }, [ref, fechar]);
 }
 
-interface Aviso { key: string; texto: string; detalhe: string; to: string; icone: LucideIcon }
+interface Aviso {
+  key: string;
+  texto: string;
+  detalhe: string;
+  to: string;
+  icone: LucideIcon;
+}
 
 export function Header() {
   const { settings, update } = useSettings();
-  const auth = useAuth() as ReturnType<typeof useAuth> & { logout?: () => void };
-  const { user, logout } = auth;
+  const { user, logout } = useAuth();
   const { data, labelOf } = useData();
   const navigate = useNavigate();
+  const gerente = gerencia(user?.tipoUsuario);
   const dark = settings.escuro;
 
   // Dados vivos do cadastro: se o nome ou o perfil mudar, o cabeçalho acompanha.
@@ -38,11 +60,23 @@ export function Header() {
   const nome = String(atual?.nome ?? user?.nome ?? "");
   const perfilValor = String(atual?.tipoUsuario ?? user?.tipoUsuario ?? "");
   const rotuloPerfil = entities.usuarios.fields
-    .find((f) => f.name === "tipoUsuario")?.options?.find((o) => o.value === perfilValor)?.label;
+    .find((f) => f.name === "tipoUsuario")
+    ?.options?.find((o) => o.value === perfilValor)?.label;
   const funcao =
-    perfilValor === "RESPONSAVEL_EQUIPAMENTO" && atual?.vinculoInstitucional === "Técnico de laboratório"
+    perfilValor === "RESPONSAVEL_EQUIPAMENTO" &&
+    atual?.vinculoInstitucional === "Técnico de laboratório"
       ? "Técnico de laboratório"
       : rotuloPerfil;
+
+  // ---------- menu do perfil ----------
+  const [perfilAberto, setPerfilAberto] = useState(false);
+  const perfilRef = useRef<HTMLDivElement>(null);
+  useFora(perfilRef, () => setPerfilAberto(false));
+
+  const sair = () => {
+    setPerfilAberto(false);
+    logout();
+  };
 
   // ---------- busca ----------
   const [busca, setBusca] = useState("");
@@ -71,19 +105,20 @@ export function Header() {
   const [notifAberta, setNotifAberta] = useState(false);
   const notifRef = useRef<HTMLDivElement>(null);
   useFora(notifRef, () => setNotifAberta(false));
-  const [lidas, setLidas] = useLocalStorage<string[]>("labpulse:lidas", []);
+  // As notificações lidas ficam guardadas por usuário.
+  const [lidas, setLidas] = useLocalStorage<string[]>(`labpulse:lidas:${user?.id}`, []);
 
   const avisos: Aviso[] = [];
   for (const e of data.equipamentos) {
-    const nome = String(e.nome);
-    if (settings.notifInoperante && e.statusOperacionalidade === "INOPERANTE")
-      avisos.push({ key: `inop-${e.id}`, texto: `${nome} está inoperante`, detalhe: "Indisponível para uso", to: "/equipamentos", icone: TriangleAlert });
-    if (settings.notifInoperante && e.statusOperacionalidade === "COM_RESTRICOES")
-      avisos.push({ key: `restr-${e.id}`, texto: `${nome} está com restrições`, detalhe: "Uso com limitações", to: "/equipamentos", icone: TriangleAlert });
+    const nomeEquip = String(e.nome);
+    if (gerente && settings.notifInoperante && e.statusOperacionalidade === "INOPERANTE")
+      avisos.push({ key: `inop-${e.id}`, texto: `${nomeEquip} está inoperante`, detalhe: "Indisponível para uso", to: "/equipamentos", icone: TriangleAlert });
+    if (gerente && settings.notifInoperante && e.statusOperacionalidade === "COM_RESTRICOES")
+      avisos.push({ key: `restr-${e.id}`, texto: `${nomeEquip} está com restrições`, detalhe: "Uso com limitações", to: "/equipamentos", icone: TriangleAlert });
     const vida = Number(e.vidaUtilEstimadaHoras);
     const uso = Number(e.horasUsoAcumuladas) || 0;
-    if (settings.notifVidaUtil && vida > 0 && (uso / vida) * 100 >= settings.vidaUtilAlerta)
-      avisos.push({ key: `vida-${e.id}`, texto: `${nome} consumiu ${Math.round((uso / vida) * 100)}% da vida útil`, detalhe: `${uso} de ${vida} horas`, to: "/equipamentos", icone: TriangleAlert });
+    if (gerente && settings.notifVidaUtil && vida > 0 && (uso / vida) * 100 >= settings.vidaUtilAlerta)
+      avisos.push({ key: `vida-${e.id}`, texto: `${nomeEquip} consumiu ${Math.round((uso / vida) * 100)}% da vida útil`, detalhe: `${uso} de ${vida} horas`, to: "/equipamentos", icone: TriangleAlert });
   }
   if (settings.notifManutencao)
     for (const m of data.manutencao.filter((x) => x.status === "ABERTA"))
@@ -99,26 +134,13 @@ export function Header() {
     navigate(a.to);
   };
 
-  // ---------- perfil / logoff ----------
-  const [perfilAberta, setPerfilAberta] = useState(false);
-  const perfilRef = useRef<HTMLDivElement>(null);
-  useFora(perfilRef, () => setPerfilAberta(false));
-
-  const sair = () => {
-    setPerfilAberta(false);
-    if (logout) {
-      logout();
-    } else {
-      localStorage.clear();
-      sessionStorage.clear();
-    }
-    navigate("/login");
-  };
-
   return (
     <header className="flex items-center justify-between gap-4 px-4 py-4">
-      <div ref={buscaRef} className="relative w-full max-w-110"
-        onKeyDown={(e) => e.key === "Escape" && setBuscaAberta(false)}>
+      <div
+        ref={buscaRef}
+        className="relative w-full max-w-\[\440px\]"
+        onKeyDown={(e) => e.key === "Escape" && setBuscaAberta(false)}
+      >
         <label className="flex items-center gap-2.5 rounded-lg bg-neutral-50 px-2.5 py-1.5 text-neutral-400 focus-within:ring-2 focus-within:ring-brand dark:bg-neutral-900">
           <Search size={16} />
           <input
@@ -127,30 +149,45 @@ export function Header() {
             placeholder="procurar serviços, laboratórios..."
             aria-label="Buscar"
             className="w-full bg-transparent text-[13px] text-black outline-none placeholder:text-neutral-400 dark:text-white"
-            onChange={(e) => { setBusca(e.target.value); setBuscaAberta(true); }}
+            onChange={(e) => {
+              setBusca(e.target.value);
+              setBuscaAberta(true);
+            }}
             onFocus={() => setBuscaAberta(true)}
-            onKeyDown={(e) => { if (e.key === "Enter" && grupos[0]) irParaBusca(grupos[0].entity.path); }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && grupos[0]) irParaBusca(grupos[0].entity.path);
+            }}
           />
         </label>
         {buscaAberta && q.length >= 2 && (
           <div className={`${painel} left-0 max-h-96 w-full`}>
             {grupos.length === 0 ? (
-              <p className="px-4 py-3 text-[13px] text-neutral-500">Nenhum resultado para “{busca.trim()}”.</p>
+              <p className="px-4 py-3 text-[13px] text-neutral-500">
+                Nenhum resultado para “{busca.trim()}”.
+              </p>
             ) : (
               grupos.map(({ entity, itens }) => (
-                <div key={entity.key} className="border-b border-neutral-100 py-1 last:border-0 dark:border-neutral-800">
+                <div
+                  key={entity.key}
+                  className="border-b border-neutral-100 py-1 last:border-0 dark:border-neutral-800"
+                >
                   <p className="px-4 pb-0.5 pt-2 text-[11px] font-bold uppercase tracking-wide text-neutral-400">
                     {entity.title} ({itens.length})
                   </p>
                   {itens.slice(0, 4).map((r) => (
-                    <button key={r.id} onClick={() => irParaBusca(entity.path)}
-                      className="block w-full truncate px-4 py-1.5 text-left text-[13px] hover:bg-neutral-50 dark:hover:bg-neutral-800">
+                    <button
+                      key={r.id}
+                      onClick={() => irParaBusca(entity.path)}
+                      className="block w-full truncate px-4 py-1.5 text-left text-[13px] hover:bg-neutral-50 dark:hover:bg-neutral-800"
+                    >
                       {String(r.nome ?? r.titulo ?? r.numeroOs ?? r.numeroRegistro ?? r.id)}
                     </button>
                   ))}
                   {itens.length > 4 && (
-                    <button onClick={() => irParaBusca(entity.path)}
-                      className="block w-full px-4 py-1.5 text-left text-[12px] font-semibold text-brand hover:bg-neutral-50 dark:hover:bg-neutral-800">
+                    <button
+                      onClick={() => irParaBusca(entity.path)}
+                      className="block w-full px-4 py-1.5 text-left text-[12px] font-semibold text-brand hover:bg-neutral-50 dark:hover:bg-neutral-800"
+                    >
                       Ver todos os {itens.length}
                     </button>
                   )}
@@ -162,13 +199,25 @@ export function Header() {
       </div>
 
       <div className="flex items-center gap-3">
-        <button className={iconBtn} onClick={() => update({ escuro: !dark })} aria-label={dark ? "Usar tema claro" : "Usar tema escuro"}>
+        <button
+          className={iconBtn}
+          onClick={() => update({ escuro: !dark })}
+          aria-label={dark ? "Usar tema claro" : "Usar tema escuro"}
+        >
           {dark ? <Sun size={15} /> : <Moon size={15} />}
         </button>
 
-        <div ref={notifRef} className="relative" onKeyDown={(e) => e.key === "Escape" && setNotifAberta(false)}>
-          <button className={iconBtn} aria-label={`Notificações${naoLidas.length ? `, ${naoLidas.length} não lidas` : ""}`}
-            aria-expanded={notifAberta} onClick={() => setNotifAberta((a) => !a)}>
+        <div
+          ref={notifRef}
+          className="relative"
+          onKeyDown={(e) => e.key === "Escape" && setNotifAberta(false)}
+        >
+          <button
+            className={iconBtn}
+            aria-label={`Notificações${naoLidas.length ? `, ${naoLidas.length} não lidas` : ""}`}
+            aria-expanded={notifAberta}
+            onClick={() => setNotifAberta((a) => !a)}
+          >
             <Bell size={15} />
             {naoLidas.length > 0 && (
               <span className="absolute -right-0.5 -top-0.5 grid min-w-4 place-items-center rounded-full bg-red-600 px-1 text-[10px] font-bold leading-4 text-white">
@@ -181,26 +230,47 @@ export function Header() {
               <div className="flex items-center justify-between border-b border-neutral-100 px-4 py-2.5 dark:border-neutral-800">
                 <h2 className="text-[13px] font-bold">Notificações</h2>
                 {naoLidas.length > 0 && (
-                  <button onClick={() => setLidas(avisos.map((a) => a.key))}
-                    className="flex items-center gap-1 text-[12px] font-semibold text-brand">
+                  <button
+                    onClick={() => setLidas(avisos.map((a) => a.key))}
+                    className="flex items-center gap-1 text-[12px] font-semibold text-brand"
+                  >
                     <CheckCheck size={13} /> Marcar todas como lidas
                   </button>
                 )}
               </div>
               {avisos.length === 0 ? (
-                <p className="px-4 py-6 text-center text-[13px] text-neutral-500">Nada por aqui. Tudo em dia.</p>
+                <p className="px-4 py-6 text-center text-[13px] text-neutral-500">
+                  Nada por aqui. Tudo em dia.
+                </p>
               ) : (
                 avisos.map((a) => {
                   const lida = lidas.includes(a.key);
                   return (
-                    <button key={a.key} onClick={() => abrirAviso(a)}
-                      className="flex w-full items-start gap-3 border-b border-neutral-100 px-4 py-2.5 text-left last:border-0 hover:bg-neutral-50 dark:border-neutral-800 dark:hover:bg-neutral-800">
-                      <a.icone size={15} className={`mt-0.5 shrink-0 ${lida ? "text-neutral-400" : "text-amber-600"}`} />
+                    <button
+                      key={a.key}
+                      onClick={() => abrirAviso(a)}
+                      className="flex w-full items-start gap-3 border-b border-neutral-100 px-4 py-2.5 text-left last:border-0 hover:bg-neutral-50 dark:border-neutral-800 dark:hover:bg-neutral-800"
+                    >
+                      <a.icone
+                        size={15}
+                        className={`mt-0.5 shrink-0 ${lida ? "text-neutral-400" : "text-amber-600"}`}
+                      />
                       <span className="min-w-0 flex-1">
-                        <span className={`block truncate text-[13px] ${lida ? "text-neutral-500" : "font-semibold"}`}>{a.texto}</span>
-                        <span className="block truncate text-[12px] text-neutral-500">{a.detalhe}</span>
+                        <span
+                          className={`block truncate text-[13px] ${lida ? "text-neutral-500" : "font-semibold"}`}
+                        >
+                          {a.texto}
+                        </span>
+                        <span className="block truncate text-[12px] text-neutral-500">
+                          {a.detalhe}
+                        </span>
                       </span>
-                      {!lida && <span className="mt-1.5 size-2 shrink-0 rounded-full bg-brand" aria-label="não lida" />}
+                      {!lida && (
+                        <span
+                          className="mt-1.5 size-2 shrink-0 rounded-full bg-brand"
+                          aria-label="não lida"
+                        />
+                      )}
                     </button>
                   );
                 })
@@ -209,31 +279,59 @@ export function Header() {
           )}
         </div>
 
-        <div ref={perfilRef} className="relative" onKeyDown={(e) => e.key === "Escape" && setPerfilAberta(false)}>
+        <div
+          ref={perfilRef}
+          className="relative"
+          onKeyDown={(e) => e.key === "Escape" && setPerfilAberto(false)}
+        >
           <button
-            type="button"
-            onClick={() => setPerfilAberta((a) => !a)}
-            aria-expanded={perfilAberta}
-            className="flex items-center gap-2.5 rounded-lg p-1 text-left transition-colors hover:bg-neutral-100 focus-visible:outline-2 focus-visible:outline-brand dark:hover:bg-neutral-800"
+            onClick={() => setPerfilAberto((a) => !a)}
+            aria-haspopup="menu"
+            aria-expanded={perfilAberto}
+            aria-label="Menu do perfil"
+            className="flex items-center gap-2.5 rounded-lg p-1 pr-2 hover:bg-neutral-100 focus-visible:outline-2 focus-visible:outline-brand dark:hover:bg-neutral-800"
           >
-            <span aria-hidden className="grid size-8 place-items-center rounded-full bg-brand/10 text-[13px] font-bold text-brand">
+            <span
+              aria-hidden
+              className="grid size-8 place-items-center rounded-full bg-brand/10 text-[13px] font-bold text-brand"
+            >
               {nome.charAt(0).toUpperCase()}
             </span>
-            <div className="max-w-44 text-[13px] leading-tight">
-              <div className="truncate font-semibold">{nome}</div>
-              <div className="truncate text-[12px] text-neutral-500">{funcao}</div>
-            </div>
+            <span className="max-w-44 text-left text-[13px] leading-tight">
+              <span className="block truncate font-semibold">{nome}</span>
+              <span className="block truncate text-[12px] text-neutral-500">{funcao}</span>
+            </span>
+            <ChevronDown
+              size={14}
+              className={`text-neutral-400 transition-transform ${perfilAberto ? "rotate-180" : ""}`}
+            />
           </button>
 
-          {perfilAberta && (
-            <div className={`${painel} right-0 w-44 py-1`}>
+          {perfilAberto && (
+            <div role="menu" className={`${painel} right-0 w-64 overflow-hidden`}>
+              <div className="border-b border-neutral-100 px-4 py-3 dark:border-neutral-800">
+                <div className="truncate text-[13px] font-bold">{nome}</div>
+                <div className="truncate text-[12px] text-neutral-500">{user?.email}</div>
+                <div className="mt-1.5 inline-block rounded-full bg-brand/10 px-2.5 py-0.5 text-[11px] font-semibold text-brand">
+                  {funcao}
+                </div>
+              </div>
               <button
-                type="button"
-                onClick={sair}
-                className="flex w-full items-center gap-2 px-4 py-2 text-left text-[13px] font-medium text-red-600 hover:bg-neutral-50 dark:text-red-400 dark:hover:bg-neutral-800"
+                role="menuitem"
+                className={itemMenu}
+                onClick={() => {
+                  setPerfilAberto(false);
+                  navigate("/configuracoes");
+                }}
               >
-                <LogOut size={15} />
-                Sair da conta
+                <SlidersHorizontal size={15} className="text-neutral-500" /> Configurações
+              </button>
+              <button
+                role="menuitem"
+                className={`${itemMenu} border-t border-neutral-100 text-red-600 dark:border-neutral-800`}
+                onClick={sair}
+              >
+                <LogOut size={15} /> Sair
               </button>
             </div>
           )}

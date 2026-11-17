@@ -23,11 +23,11 @@ function Gate() {
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <BrowserRouter>
-      <SettingsProvider>
-        <AuthProvider>
+      <AuthProvider>
+        <SettingsProvider>
           <Gate />
-        </AuthProvider>
-      </SettingsProvider>
+        </SettingsProvider>
+      </AuthProvider>
     </BrowserRouter>
   </React.StrictMode>
 );

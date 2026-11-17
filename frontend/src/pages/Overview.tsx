@@ -1,23 +1,26 @@
 import { TriangleAlert } from "lucide-react";
 import { BarChart, ChartCard, DonutChart, HBarList } from "../components/Charts";
+import { useAuth } from "../auth";
+import { gerencia } from "../cargos";
 import { useData } from "../data";
 import { STATUS_EQUIPAMENTO } from "../entities";
 import { useSettings } from "../hooks/useSettings";
-import { useAuth } from "../auth"
 
 export function Overview() {
   const { data } = useData();
   const { settings } = useSettings();
   const { user } = useAuth();
-
   const admin = user?.tipoUsuario === "ADMINISTRADOR";
+  const gerente = gerencia(user?.tipoUsuario);
+
+  // O cartão de usuários só existe para o administrador (os demais não recebem a lista completa).
   const totals: [string, number][] = [
     ["Serviços", data.servicos.length],
     ...(admin ? ([["Usuários", data.usuarios.length]] as [string, number][]) : []),
     ["Laboratórios", data.laboratorios.length],
     ["Equipamentos", data.equipamentos.length],
     ["Manutenções abertas", data.manutencao.filter((m) => m.status === "ABERTA").length],
-  ] as const;
+  ];
 
   const statusColors = ["#2ca02c", "#0873d6", "#ff7f0e", "#d62728", "#9ca3af"];
   const porEstado = STATUS_EQUIPAMENTO.map((s, i) => ({
@@ -133,18 +136,22 @@ export function Overview() {
         </ChartCard>
       </div>
 
-      <h2 className="mb-2 mt-8 text-[15px] font-bold">Precisam de atenção</h2>
-      {alerts.length === 0 ? (
-        <p className="text-[13px] text-neutral-500">Nenhum equipamento fora dos limites definidos em Configurações.</p>
-      ) : (
-        <ul className="flex flex-col gap-2">
-          {alerts.map((a) => (
-            <li key={a.id} className="flex items-center gap-2 rounded-lg bg-amber-50 px-4 py-2.5 text-[13px] text-amber-900 dark:bg-amber-950 dark:text-amber-200">
-              <TriangleAlert size={15} className="shrink-0" />
-              <span><strong>{a.nome}</strong>: {a.motivos.join(", ")}</span>
-            </li>
-          ))}
-        </ul>
+      {gerente && (
+        <>
+          <h2 className="mb-2 mt-8 text-[15px] font-bold">Precisam de atenção</h2>
+          {alerts.length === 0 ? (
+            <p className="text-[13px] text-neutral-500">Nenhum equipamento fora dos limites definidos em Configurações.</p>
+          ) : (
+            <ul className="flex flex-col gap-2">
+              {alerts.map((a) => (
+                <li key={a.id} className="flex items-center gap-2 rounded-lg bg-amber-50 px-4 py-2.5 text-[13px] text-amber-900 dark:bg-amber-950 dark:text-amber-200">
+                  <TriangleAlert size={15} className="shrink-0" />
+                  <span><strong>{a.nome}</strong>: {a.motivos.join(", ")}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </>
       )}
     </section>
   );
