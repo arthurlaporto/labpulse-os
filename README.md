@@ -162,5 +162,5 @@ This project is licensed under the MIT License — see the [LICENSE](LICENSE) fi
 ---
 
 <div align="center">
-  Developed by <a href="https://github.com/arthurlaporto">Arthur Laporto</a>
+  Developed by <a href="https://github.com/arthurlaporto">Arthur Lourenço de Araújo Porto</a>
 </div>
