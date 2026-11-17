@@ -2,7 +2,7 @@
 
 # 🧪 LabPulse OS
 
-**Sistema integrado de gestão operacional, controle de acesso e monitoramento laboratorial.**
+**Integrated operational management, role-based access control, and laboratory monitoring system.**
 
 [![NestJS](https://img.shields.io/badge/NestJS-E0234E?style=for-the-badge&logo=nestjs&logoColor=white)](https://nestjs.com/)
 [![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](https://react.dev/)
@@ -11,96 +11,95 @@
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 [![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
 
-[Acessar Aplicação](https://labpulse-os.pages.dev) · [Status da API](https://labpulse-os.onrender.com) · [Reportar Bug](https://github.com/arthurlaporto/labpulse-os/issues)
+[Live Demo](https://labpulse-os.pages.dev) · [API Endpoint](https://labpulse-os.onrender.com) · [Report Bug](https://github.com/arthurlaporto/labpulse-os/issues)
 
 </div>
 
 ---
 
-## 📋 Sobre o Projeto
+## 📋 Overview
 
-O **LabPulse OS** é uma plataforma web full-stack projetada para centralizar rotinas laboratoriais, rastreabilidade de operações e governança de usuários. A aplicação foi construída com foco em segurança, isolamento de visibilidade por nível de permissão e alta disponibilidade em nuvem.
+**LabPulse OS** is a full-stack web platform designed to centralize laboratory workflows, operational traceability, and user governance. Built with a decoupled client-server architecture, the platform emphasizes security, granular permission-based data visibility, and cloud-native scalability.
 
-### Principais Funcionalidades
+### Key Features
 
-* **Autenticação e Segurança:** Fluxo completo de login protegido por JWT, validação de sessão no back-end e política estrita de CORS entre cliente e servidor.
-* **Controle de Acesso Baseado em Perfis (RBAC):** Escopo de visibilidade de dados segmentado por nível de usuário (*Role-Based Access Control*), garantindo que cada operador acesse apenas os módulos e registros pertinentes à sua função.
-* **Gestão e Configurações:** Painel administrativo para gerenciamento de usuários, parâmetros do sistema e monitoramento operacional.
-* **Arquitetura Desacoplada:** API RESTful independente do cliente web, permitindo escalabilidade horizontal, deploys independentes e manutenção modular.
+* **Authentication & Security:** Complete JWT-based authentication flow, session protection guards, and strict CORS policy enforcement between client and server.
+* **Role-Based Access Control (RBAC):** Data visibility scoping segmented by user role, ensuring operators only view and interact with modules and records authorized for their clearance level.
+* **Administration & Settings:** Centralized administrative panel for managing system users, access permissions, and operational parameters.
+* **Decoupled Cloud Architecture:** Independent RESTful API and static web client enabling isolated scaling, streamlined CI/CD, and modular maintenance.
 
 ---
 
-## 🏗️ Arquitetura e Stack Tecnológica
-
-| Camada | Tecnologias | Hospedagem / Infraestrutura |
-| :--- | :--- | :--- |
-| **Front-end** | React, TypeScript, Vite | Cloudflare Workers / Pages (Static Assets) |
-| **Back-end** | NestJS, Node.js, TypeScript | Render (Container Docker) |
-| **ORM & Banco** | Prisma ORM 7, PostgreSQL | Neon Serverless Postgres |
-| **CI/CD** | GitHub Auto-Deploy | Integração contínua via branch `main` |
+## 🏗️ System Architecture & Tech Stack
 
 ```mermaid
 flowchart LR
-    User([Navegador / Operador]) -->|HTTPS| CF[Cloudflare Static Assets<br/>React + Vite]
-    CF -->|REST API + JWT| Render[Render Docker Service<br/>NestJS + Prisma 7]
-    Render -->|SSL / TCP| Neon[(Neon PostgreSQL<br/>Serverless DB)]
+    Client["🌐 Web Client<br/>(React + Vite)<br/>Cloudflare"] -->|HTTPS / REST API| API["⚙️ Backend API<br/>(NestJS + Docker)<br/>Render"]
+    API -->|Prisma ORM 7 / SSL| DB[("🗄️ PostgreSQL<br/>Database<br/>Neon Serverless")]
 ```
+
+| Layer | Technologies | Cloud Infrastructure |
+| :--- | :--- | :--- |
+| **Front-end** | React, TypeScript, Vite | Cloudflare Workers / Pages (Static Assets) |
+| **Back-end** | NestJS, Node.js, TypeScript | Render (Docker Container) |
+| **ORM & Database** | Prisma ORM 7, PostgreSQL | Neon Serverless Postgres |
+| **CI/CD** | GitHub Auto-Deploy | Continuous deployment via `main` branch |
 
 ---
 
-## 📁 Estrutura do Repositório
+## 📁 Repository Structure
 
 ```text
 labpulse-os/
-├── frontend/               # Aplicação web em React + Vite
-│   ├── public/             # Arquivos estáticos e favicons
-│   ├── src/                # Componentes, páginas, serviços de API e contextos
-│   └── package.json        # Dependências e scripts do cliente
-├── src/                    # Código-fonte da API NestJS
-│   ├── auth/               # Autenticação, guards e estratégias JWT
-│   ├── users/              # Gestão de usuários e perfis de acesso
-│   └── prisma/             # Serviço de conexão com o banco de dados
-├── prisma/                 # Schema do banco e migrations (Prisma 7)
-├── Dockerfile              # Build multi-stage otimizado para produção
-└── package.json            # Dependências e scripts do back-end
+├── frontend/               # React + Vite web application
+│   ├── public/             # Static assets and favicons
+│   ├── src/                # Components, pages, API services, and auth contexts
+│   └── package.json        # Client dependencies and build scripts
+├── src/                    # NestJS API source code
+│   ├── auth/               # JWT authentication, guards, and strategies
+│   ├── users/              # User management and RBAC scoping
+│   └── prisma/             # Database connection service
+├── prisma/                 # Database schema and migrations (Prisma 7)
+├── Dockerfile              # Multi-stage production container build
+└── package.json            # Backend dependencies and scripts
 ```
 
 ---
 
-## 🚀 Como Executar Localmente
+## 🚀 Getting Started (Local Development)
 
-### Pré-requisitos
+### Prerequisites
 
-* **Node.js** (v20 ou superior)
-* **npm** ou **yarn**
-* Instância **PostgreSQL** ativa (local ou via [Neon](https://neon.tech))
+* **Node.js** (v20 or higher)
+* **npm** or **yarn**
+* Active **PostgreSQL** instance (local or via [Neon](https://neon.tech))
 
-### 1. Clonar o repositório
+### 1. Clone the repository
 
 ```bash
 git clone https://github.com/arthurlaporto/labpulse-os.git
 cd labpulse-os
 ```
 
-### 2. Configurar e iniciar o Back-end
+### 2. Configure and run the Back-end
 
-Instale as dependências na raiz do projeto:
+Install dependencies at the project root:
 
 ```bash
 npm install
 ```
 
-Crie um arquivo `.env` na raiz do projeto com as seguintes variáveis:
+Create a `.env` file in the root directory with the following variables:
 
 ```env
-DATABASE_URL="postgresql://usuario:senha@host:5432/labpulse?sslmode=require"
-JWT_SECRET="sua_chave_secreta_segura"
+DATABASE_URL="postgresql://user:password@host:5432/labpulse?sslmode=require"
+JWT_SECRET="your_secure_jwt_secret"
 FRONTEND_URL="http://localhost:5173"
 ADMIN_EMAIL="admin@labpulse.com"
-ADMIN_SENHA="sua_senha_admin"
+ADMIN_SENHA="your_admin_password"
 ```
 
-Gere o cliente do Prisma, aplique as migrations no banco e inicie o servidor:
+Generate the Prisma client, run database migrations, and start the development server:
 
 ```bash
 npx prisma generate
@@ -108,60 +107,60 @@ npx prisma migrate dev
 npm run start:dev
 ```
 
-A API estará disponível em `http://localhost:3000`.
+The API will be available at `http://localhost:3000`.
 
-### 3. Configurar e iniciar o Front-end
+### 3. Configure and run the Front-end
 
-Abra um segundo terminal, acesse a pasta `frontend` e instale as dependências:
+In a separate terminal session, navigate to the `frontend` folder and install dependencies:
 
 ```bash
 cd frontend
 npm install
 ```
 
-Crie o arquivo `frontend/.env` apontando para a API local:
+Create a `frontend/.env` file pointing to your local API:
 
 ```env
 VITE_API_URL="http://localhost:3000"
 ```
 
-Inicie o servidor de desenvolvimento:
+Start the Vite development server:
 
 ```bash
 npm run dev
 ```
 
-A interface estará acessível em `http://localhost:5173`.
+The web interface will be accessible at `http://localhost:5173`.
 
 ---
 
-## ☁️ Arquitetura de Deploy (Produção)
+## ☁️ Production Deployment Pipeline
 
-O ambiente de produção opera com deploy contínuo automático a cada `push` na branch `main`:
+The production environment runs continuous deployment triggered automatically on pushes to `main`:
 
-1. **Banco de Dados (Neon):** PostgreSQL gerenciado com conexão segura via SSL (`DATABASE_URL`).
-2. **API (Render):** Construída via `Dockerfile` customizado que executa `npx prisma generate` antes da compilação TypeScript (`npm run build`), garantindo compatibilidade total com o client gerado pelo Prisma 7.
-3. **Front-end (Cloudflare):** Build estático gerado a partir do diretório raiz `frontend` com injeção da variável `VITE_API_URL` em tempo de compilação.
+1. **Database (Neon):** Serverless PostgreSQL instance connected securely via SSL (`DATABASE_URL`).
+2. **API (Render):** Containerized via a custom `Dockerfile` that runs `npx prisma generate` prior to the TypeScript build (`npm run build`), ensuring full compatibility with Prisma 7's custom client output.
+3. **Front-end (Cloudflare):** Static bundle built from the `frontend` root directory with `VITE_API_URL` injected at build time.
 
 ---
 
 ## 📸 Preview
 
-> *Adicione aqui capturas de tela da tela de login e do dashboard principal salvando as imagens em `.github/assets/` e referenciando-as abaixo:*
+> *Add screenshots of the login screen and main dashboard by saving images to `.github/assets/` and referencing them below:*
 >
 > ```markdown
-> ![Tela de Login](.github/assets/login.png)
-> ![Dashboard Principal](.github/assets/dashboard.png)
+> ![Login Screen](.github/assets/login.png)
+> ![Main Dashboard](.github/assets/dashboard.png)
 > ```
 
 ---
 
-## 📄 Licença
+## 📄 License
 
-Este projeto está sob a licença MIT. Consulte o arquivo [LICENSE](LICENSE) para mais detalhes.
+This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
 
 ---
 
 <div align="center">
-  Desenvolvido por <a href="https://github.com/arthurlaporto">Arthur Laporto</a>
+  Developed by <a href="https://github.com/arthurlaporto">Arthur Laporto</a>
 </div>
