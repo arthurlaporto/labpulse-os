@@ -11,8 +11,6 @@
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 [![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
 
-[Live Demo](https://labpulse-os.pages.dev) · [API Endpoint](https://labpulse-os.onrender.com) · [Report Bug](https://github.com/arthurlaporto/labpulse-os/issues)
-
 </div>
 
 ---
